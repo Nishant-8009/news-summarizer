@@ -9,13 +9,31 @@ This project is an AI-driven news summarizer agent that autonomously scrapes new
 - AI-powered similarity check using Google Gemini API
 - Categorizes news articles automatically
 - Generates SEO-friendly metadata and summaries
+- News related image searching
 - Posts only unique, well-processed articles
 
 ## Installation
 ### Prerequisites
 Ensure you have the following installed:
 - Node.js (v18+ recommended)
+#### How to Get Google Custom Search API Key and CX  
 
+##### Step 1: Get a Google Custom Search API Key  
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/).  
+2. Create a new project (or select an existing one).  
+3. In the left sidebar, go to **APIs & Services > Library**.  
+4. Search for **"Custom Search API"** and enable it.  
+5. Once enabled, go to **APIs & Services > Credentials**.  
+6. Click **Create Credentials > API Key**.  
+7. Copy the generated API key (this is your `GOOGLE_SEARCH_API_KEY`).  
+
+##### Step 2: Create a Google Custom Search Engine (CSE)  
+1. Visit [Google Custom Search Engine](https://programmablesearchengine.google.com/).  
+2. Click **"Get Started"**.  
+3. Under **"Sites to Search"**, enter `*.com` (to search the whole web) and click **"Create"**.  
+4. Go to the **Control Panel** of the new search engine.  
+5. Find **"Search engine ID"** and copy it (this is your `GOOGLE_SEARCH_CX`).  
+ 
 ### Clone the Repository
 ```sh
 git clone https://github.com/your-repo/news-summarizer.git
@@ -36,6 +54,8 @@ WORDPRESS_URL=<your_wordpress_url>
 WORDPRESS_USERNAME=<your_wordpress_username>
 WORDPRESS_APP_PASSWORD=<your_wordpress_app_password>
 MONGODB_URI=<your_mongodb_uri>
+GOOGLE_SEARCH_API_KEY =<your_search_engine_api_key>
+GOOGLE_SEARCH_CX =<your_search_engine_id>
 ```
 
 2. Ensure your MongoDB instance is running.
@@ -69,6 +89,7 @@ news-summarizer/
    - Categorizes the article using AI.
    - Generates an SEO-friendly title, description, and keywords.
    - Creates a short summary.
+   - Searching for related image from web with help of AI Agent.
 5. **Publishing**: Saves the final article in the database for display on the website.
 
 ## Notes

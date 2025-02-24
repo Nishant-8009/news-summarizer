@@ -111,7 +111,7 @@ export default async function scrapeBBCNews() {
       );
       try {
         const createPostWithTimeout = new Promise((resolve, reject) => {
-          const timer = setTimeout(() => reject(), 120000); // 120 sec timeout
+          const timer = setTimeout(() => reject(), 180000); // 180 sec timeout
 
           post.createPost().then((result) => {
             clearTimeout(timer);

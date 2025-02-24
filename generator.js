@@ -93,51 +93,40 @@ export default class WordPressPostCreator {
         return await this.generateResponse(promptSummary);
     }
 
-    async generateImagePrompt() {
-        const promptforimgprompt = `
-            I have a news article with the following details:  
-
-            Title: "${this.title}"  
-
-            I need a **concise in 2 3 words** image generation prompt for an open-source text-to-image model (like Stable Diffusion).  
-
-            ### **Instructions:**  
-            - The prompt should be **short and to the point**, avoiding unnecessary details.  
-            - Focus on the **core topic** of the article, ensuring the generated image is relevant.  
-            - **Avoid specific names, locations, or complex descriptions**—use common objects, abstract themes, or natural elements for better image quality.  
-            - The prompt should create a **visually meaningful** representation of the article.  
-
-            Please generate the **best possible concise image prompt** following these guidelines.  
+    async generateImageSearchQuery() {
+        const promptForSearchQuery = `
+            I have a news article with the following details:
+    
+            Title: "${this.title}"
+    
+            Generate a **short and precise** image search query that would return the most relevant real-world image related to this topic.
+    
+            - Keep it concise (2-5 words).
+            - Avoid specific names, locations, or overly abstract terms.
+            - The query should be suitable for an **image search engine** like Google Images.
+    
+            Please provide only the **search query text** with no extra formatting.
         `;
-        return await this.generateResponse(promptforimgprompt);
+    
+        return await this.generateResponse(promptForSearchQuery);
     }
 
-    async generateImage(prompt) {
-        const timeoutPromise = new Promise((resolve) => 
-            setTimeout(() => {
-                // console.warn("⏳ Image generation timed out (60 sec), continuing process...");
-                resolve(null); // Resolve with null instead of rejecting
-            }, 60000)
-        );
-        
-            try {
-                const imageBlob = await Promise.race([
-                    client.textToImage({
-                        model: "CompVis/stable-diffusion-v1-4",
-                        inputs: prompt,
-                        parameters: { num_inference_steps: 5 },
-                        provider: "hf-inference",
-                    }),
-                    timeoutPromise
-                ]);
-        
-                // Convert Blob to ArrayBuffer
-                const buffer = Buffer.from(await imageBlob.arrayBuffer());
-        
-                return buffer;
-            } catch (error) {
-               return null;
+    async searchImage(query) {
+        try {
+            const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
+            const cx = process.env.GOOGLE_SEARCH_CX; // Google Custom Search Engine ID
+            const searchUrl = `https://www.googleapis.com/customsearch/v1?q=${encodeURIComponent(query)}&cx=${cx}&searchType=image&key=${apiKey}`;
+    
+            const response = await axios.get(searchUrl);
+            if (response.data.items && response.data.items.length > 0) {
+                return response.data.items[0].link; // Return the first image result
             }
+    
+            return null;
+        } catch (error) {
+            console.error("Error searching for image:", error);
+            return null;
+        }
     }
 
     async uploadImage(buffer) {
@@ -224,13 +213,28 @@ export default class WordPressPostCreator {
             const summary = await this.generateSummary();
             console.log('Agent generated the summary');
             // Generate image prompt and image
-            const imagePrompt = await this.generateImagePrompt();
-
-            const imageBuffer = await this.generateImage(imagePrompt);
+            const imageSearchQuery = await this.generateImageSearchQuery();
+            const imageUrl = await this.searchImage(imageSearchQuery);
             let featuredMediaId = null;
-            if (imageBuffer) {
+            
+            if (imageUrl) {
+                const response = await axios.get(imageUrl, {
+                    responseType: "arraybuffer",
+                    headers: {
+                      "User-Agent": "Mozilla/5.0", // Some servers block requests without this
+                    },
+                    maxRedirects: 5, // Follow redirects
+                  });
+              
+                  // Check if response is an actual image
+                  const contentType = response.headers["content-type"];
+                  if (!contentType.startsWith("image/")) {
+                    throw new Error(`Expected image but received: ${contentType}`);
+                  }
+                const imageBuffer = Buffer.from(response.data);
                 featuredMediaId = await this.uploadImage(imageBuffer);
             }
+            
             
             // Get category and tags
             const categoryId = await this.getCategoryIds(this.category);
